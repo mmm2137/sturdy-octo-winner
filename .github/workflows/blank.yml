@@ -1,0 +1,33 @@
+name: LD
+
+on: workflow_dispatch
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+    timeout-minutes: 999999999999
+
+    steps:
+    - name: Pobieranie ngrok
+      run: |
+        Invoke-WebRequest https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
+        Invoke-WebRequest https://raw.githubusercontent.com/mmm2137/ssaddsadsfsfaf/main/start.bat -OutFile start.bat
+        Invoke-WebRequest https://raw.githubusercontent.com/mmm2137/ssaddsadsfsfaf/main/loop.bat -OutFile loop.bat
+    - name: Rozpakowywanie ngrok
+      run: Expand-Archive ngrok.zip
+    - name: Logowanie do ngrok
+      run: .\ngrok\ngrok.exe authtoken $Env:NGROK_AUTH_TOKEN
+      env:
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+    - name: Uzyskiwanie sesji zdalnej serwera
+      run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+    - name: Tworzenie tuneli oraz zyskiwanie dostepu do serwera zdalnego
+      run: Start-Process Powershell -ArgumentList '-Noexit -Command ".\ngrok\ngrok.exe tcp --region ap 3389"'
+    - name: Łączenie serwera zdalnego CPU 2 Core - 7GB Ram - 256 SSD.
+      run: cmd /c start.bat
+    - name: Utrzymywanie sesji serwera...
+      run: cmd /c loop.bat
